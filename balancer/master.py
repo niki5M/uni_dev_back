@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from balancer.config import TREE, get_worker_url, MASTER_PORT, get_all_workers
 from balancer.echo_algorithm import echo_algorithm_collect_load, collect_load_from_workers
+from balancer.finn_algorithm import run_finn_algorithm
 
 # Текущая карта нагрузок (обновляется волной)
 load_map: dict = {}
@@ -194,6 +195,23 @@ def visualize():
 @app.get("/health")
 def health():
     return {"status": "ok", "role": "master"}
+
+
+@app.get("/finn")
+def run_finn():
+    """
+    Запуск волнового алгоритма Финна для текущей топологии TREE.
+    Возвращает для каждого узла множества Inc(s) и NInc(s).
+    Используется на странице визуализации для лабы 7–10.
+    """
+    raw_result = run_finn_algorithm("master")
+    # Преобразуем множества в отсортированные списки, чтобы их можно было сериализовать в JSON
+    serializable = {}
+    for node_id, sets in raw_result.items():
+        inc = sorted(list(sets.get("Inc", [])))
+        ninc = sorted(list(sets.get("NInc", [])))
+        serializable[node_id] = {"Inc": inc, "NInc": ninc}
+    return JSONResponse(serializable)
 
 
 def main():

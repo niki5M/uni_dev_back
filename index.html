@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Централизованная балансировка нагрузки</title>
+  <title>Балансировка нагрузки · Алгоритм Финна</title>
   <script src="script.js" defer></script>
   <style>
     :root {
@@ -390,13 +390,13 @@
   <div class="page">
     <header class="header">
       <div class="title-block">
-        <div class="title-pill">Распределённая система · Алгоритм «Эхо»</div>
+        <div class="title-pill">Распределённая система · Алгоритм Финна</div>
         <h1>
           Централизованная балансировка нагрузки
         </h1>
         <p class="subtitle">
-          Мастер-узел собирает информацию о нагрузке с воркеров по волновому алгоритму «Эхо».
-          После этого принимает централизованное решение о переносе задач между узлами.
+          Волновой алгоритм Финна используется для сбора информации о загрузке узлов сети университета,
+          после чего выполняется централизованное выравнивание нагрузки.
         </p>
       </div>
       <div class="controls">
@@ -404,12 +404,15 @@
           <button class="btn-primary" onclick="fetchStatus()">
             Снять срез состояния
           </button>
+          <button class="btn-secondary" onclick="sendTenRequests()">
+            Отправить 10 запросов
+          </button>
           <button class="btn-secondary" onclick="balanceOnce()">
             Выполнить шаг балансировки
           </button>
         </div>
         <div class="hint">
-          1. Сгенерируйте запросы через <code>balancer.client</code> · 2. Обновите срез · 3. Запустите балансировку
+          1. Отправьте 10 запросов · 2. Снимите срез · 3. Выполните шаг балансировки
         </div>
       </div>
     </header>
@@ -418,9 +421,10 @@
       <section class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">Состояние воркеров до и после балансировки</div>
+            <div class="card-title">Состояние сервисов студенческого приложения до и после балансировки</div>
             <div class="card-caption">
-              Каждый воркер — лист в дереве. Нагрузка — количество задач, поставленных мастером.
+              Каждый узел — отдельный сервис (зачётка, расписание, новости и т.д.). Нагрузка моделирует количество запросов студентов,
+              которое затем выравнивается централизованным алгоритмом по данным волнового обхода Финна.
             </div>
           </div>
           <div class="badge">Workers · Leaves</div>
@@ -429,11 +433,12 @@
         <div class="grid-two">
           <div class="small-card">
             <h2>До балансировки</h2>
-            <p>Состояние системы сразу после поступления запросов от клиентов.</p>
+            <p>Состояние студенческого приложения сразу после неравномерного потока запросов к сервисам.</p>
             <table>
               <thead>
               <tr>
                 <th>Узел</th>
+                <th>Адрес</th>
                 <th>Нагрузка</th>
               </tr>
               </thead>
@@ -448,6 +453,7 @@
               <thead>
               <tr>
                 <th>Узел</th>
+                <th>Адрес</th>
                 <th>Нагрузка</th>
               </tr>
               </thead>
@@ -457,34 +463,7 @@
         </div>
       </section>
 
-      <aside class="tree-card">
-        <div class="tree-header">
-          <div>
-            <div class="tree-title">Топология дерева и нагрузка</div>
-            <div class="tree-caption">
-              Визуализация алгоритма «Эхо»: мастер → промежуточные узлы → воркеры → эхо с нагрузкой.
-            </div>
-          </div>
-          <div class="badge">Tree · Echo Wave</div>
-        </div>
-
-        <pre id="treeView"></pre>
-
-        <div class="legend">
-          <div class="legend-item">
-            <span class="legend-dot"></span> низкая нагрузка
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot warn"></span> средняя нагрузка
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot danger"></span> высокая нагрузка
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot offline"></span> узел недоступен
-          </div>
-        </div>
-      </aside>
+      <!-- Блоки с топологией и подробным выводом Финна убраны, чтобы сфокусироваться на балансировке по его данным -->
     </main>
   </div>
 </body>
