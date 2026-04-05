@@ -1,121 +1,197 @@
-const MASTER_URL = "http://127.0.0.1:9000";
+const API_URL =
+  window.location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000";
 
-function getLoadClass(load) {
-  if (load < 0) return "offline";
-  if (load <= 3) return "low";
-  if (load <= 7) return "medium";
+function getLoadClass(load, avg) {
+  if (load <= avg * 0.8) return "low";
+  if (load <= avg * 1.2) return "medium";
   return "high";
 }
 
-function renderNodeCell(nodeId) {
-  const group = nodeId.split("_")[0]; // worker_8001 -> worker
-  return `
-    <div class="pill-node">
-      <span>${group}</span>
-      <strong>${nodeId}</strong>
-    </div>
-  `;
+function setMessage(text, isError = false) {
+  const el = document.getElementById("messageBox");
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? "#fca5a5" : "#93c5fd";
 }
 
-function renderLoadCell(load) {
-  if (load < 0) {
-    return `
-      <div class="pill-load offline">
-        недоступен
-      </div>
-    `;
+function formatJsonPretty(obj) {
+  return JSON.stringify(obj, null, 2);
+}
+
+function normalizeStatusData(data) {
+  if (data && data.loads && typeof data.loads === "object") {
+    const result = {};
+    for (const [nodeId, load] of Object.entries(data.loads)) {
+      result[nodeId] = {
+        address: `Узел графа ${nodeId}`,
+        load: Number(load || 0),
+      };
+    }
+    return result;
   }
-  const cls = getLoadClass(load);
-  let label = "";
-  if (cls === "low") label = "низкая";
-  else if (cls === "medium") label = "средняя";
-  else if (cls === "high") label = "высокая";
-  return `
-    <div class="pill-load ${cls}">
-      <span>${load}</span>
-      <span>${label}</span>
-    </div>
-  `;
+  return data || {};
 }
 
-function updateTableFromLoads(loads, tableId) {
+function updateTable(data, tableId) {
   const tableBody = document.getElementById(tableId);
   if (!tableBody) return;
   tableBody.innerHTML = "";
-
-  // Показываем только воркеров (листья дерева)
-  const entries = Object.entries(loads).filter(([id]) => id.startsWith("worker_"));
-
-  if (entries.length === 0) {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td colspan="2">Нет данных о воркерах</td>`;
-    tableBody.appendChild(row);
-    return;
-  }
-
-  for (const [nodeId, load] of entries) {
+  const rows = normalizeStatusData(data);
+  for (const branch in rows) {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${renderNodeCell(nodeId)}</td>
-      <td>${renderLoadCell(load)}</td>
+      <td>${branch}</td>
+      <td>${rows[branch].address ?? "-"}</td>
+      <td>${rows[branch].load ?? 0}</td>
     `;
     tableBody.appendChild(row);
   }
 }
 
-function setTreeView(text) {
-  const treeEl = document.getElementById("treeView");
-  if (!treeEl) return;
-  treeEl.textContent = text;
+function renderLoads(loads) {
+  const tableBody = document.getElementById("loadsTable");
+  if (!tableBody) return;
+  tableBody.innerHTML = "";
+  const entries = Object.entries(loads || {});
+  const total = entries.reduce((sum, [, load]) => sum + Number(load || 0), 0);
+  const avg = entries.length ? total / entries.length : 0;
+
+  for (const [nodeId, load] of entries.sort(([a], [b]) => a.localeCompare(b))) {
+    const row = document.createElement("tr");
+    const cls = getLoadClass(load, avg || 1);
+    row.innerHTML = `
+      <td><span class="pill-node"><strong>${nodeId}</strong></span></td>
+      <td><span class="pill-load ${cls}">${load}</span></td>
+    `;
+    tableBody.appendChild(row);
+  }
+  document.getElementById("avgLoad").textContent = avg.toFixed(2);
+  document.getElementById("totalLoad").textContent = String(total);
 }
 
-function fetchStatus() {
-  fetch(`${MASTER_URL}/visualize`)
-    .then(r => {
-      if (!r.ok) {
-        throw new Error(`HTTP ${r.status}`);
-      }
-      return r.json();
-    })
-    .then(data => {
-      updateTableFromLoads(data.loads || {}, "beforeBalance");
-      setTreeView("Текущая топология и нагрузки:\n\n" + (data.tree || ""));
-    })
-    .catch(err => {
-      console.error(err);
-      setTreeView(
-        "Ошибка при получении состояния от мастера.\n" +
-        "Убедитесь, что запущены мастер, группы и воркеры.\n\n" +
-        "Подробности смотрите в консоли браузера."
-      );
+function renderTopology(topology) {
+  const graphEl = document.getElementById("graphView");
+  if (!graphEl) return;
+  const lines = [];
+  Object.entries(topology || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([src, dsts]) => {
+      if (!dsts.length) lines.push(`${src} -> (нет исходящих дуг)`);
+      else lines.push(`${src} -> ${dsts.join(", ")}`);
     });
+  graphEl.textContent = lines.join("\n");
 }
 
-function balanceOnce() {
-  fetch(`${MASTER_URL}/balance`)
-    .then(() => fetch(`${MASTER_URL}/visualize`))
-    .then(r => {
-      if (!r.ok) {
-        throw new Error(`HTTP ${r.status}`);
-      }
-      return r.json();
-    })
-    .then(data => {
-      updateTableFromLoads(data.loads || {}, "afterBalance");
-      setTreeView(
-        "Текущая топология и нагрузки (после балансировки):\n\n" +
-        (data.tree || "")
-      );
-    })
-    .catch(err => {
-      console.error(err);
-      setTreeView(
-        "Ошибка при выполнении балансировки или получении состояния.\n" +
-        "Проверьте, что мастер доступен по адресу http://127.0.0.1:9000.\n\n" +
-        "Подробности смотрите в консоли браузера."
-      );
-    });
+async function apiGet(path) {
+  const r = await fetch(`${API_URL}${path}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
 }
 
-window.onload = fetchStatus;
+async function apiPost(path, payload) {
+  const r = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`HTTP ${r.status}: ${txt}`);
+  }
+  return r.json();
+}
+
+async function refreshStatus() {
+  try {
+    const data = await apiGet("/status");
+    renderTopology(data.topology || {});
+    renderLoads(data.loads || {});
+    updateTable(data, "beforeBalance");
+    document.getElementById("topologyInput").value = formatJsonPretty(data.topology || {});
+    document.getElementById("loadsInput").value = formatJsonPretty(data.loads || {});
+    setMessage("Состояние обновлено.");
+  } catch (err) {
+    setMessage(`Ошибка обновления: ${err.message}`, true);
+  }
+}
+
+async function applyTopology() {
+  try {
+    const topology = JSON.parse(document.getElementById("topologyInput").value || "{}");
+    await apiPost("/topology", { topology });
+    setMessage("Топология сохранена.");
+    await refreshStatus();
+  } catch (err) {
+    setMessage(`Ошибка топологии: ${err.message}`, true);
+  }
+}
+
+async function applyLoads() {
+  try {
+    const loads = JSON.parse(document.getElementById("loadsInput").value || "{}");
+    await apiPost("/loads", { loads });
+    setMessage("Нагрузки сохранены.");
+    await refreshStatus();
+  } catch (err) {
+    setMessage(`Ошибка нагрузок: ${err.message}`, true);
+  }
+}
+
+async function generateRequests() {
+  try {
+    const count = Number(document.getElementById("requestsCount").value || 10);
+    await apiPost("/generate_requests", { count });
+    setMessage(`Добавлено запросов: ${count}`);
+    await refreshStatus();
+  } catch (err) {
+    setMessage(`Ошибка генерации: ${err.message}`, true);
+  }
+}
+
+function renderLastStep(step) {
+  const pre = document.getElementById("stepResult");
+  if (!pre) return;
+  pre.textContent = formatJsonPretty(step);
+}
+
+async function runOneStep() {
+  try {
+    const step = await apiGet("/balance");
+    renderLastStep(step);
+    setMessage(`Шаг выполнен. Перенесено: ${step.moved_total}`);
+    const status = await apiGet("/status");
+    renderTopology(status.topology || {});
+    renderLoads(status.loads || {});
+    updateTable(status, "afterBalance");
+  } catch (err) {
+    setMessage(`Ошибка шага балансировки: ${err.message}`, true);
+  }
+}
+
+async function runUntilStable() {
+  try {
+    const maxSteps = Number(document.getElementById("maxSteps").value || 20);
+    const result = await apiPost("/balance/run", { max_steps: maxSteps });
+    const last = result.steps?.[result.steps.length - 1] || {};
+    renderLastStep(last);
+    setMessage(`Стабилизация завершена. Шагов: ${result.steps?.length || 0}`);
+    await refreshStatus();
+  } catch (err) {
+    setMessage(`Ошибка запуска до стабилизации: ${err.message}`, true);
+  }
+}
+
+window.refreshStatus = refreshStatus;
+window.applyTopology = applyTopology;
+window.applyLoads = applyLoads;
+window.generateRequests = generateRequests;
+window.runOneStep = runOneStep;
+window.runUntilStable = runUntilStable;
+window.updateTable = updateTable;
+
+// Совместимость с примером пользователя
+window.fetchStatus = refreshStatus;
+window.balanceLoad = runOneStep;
+
+window.onload = refreshStatus;
 

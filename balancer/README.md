@@ -129,6 +129,8 @@ chmod +x balancer/create_visualization.sh
 
 | Файл | Назначение |
 |------|------------|
+| `decentralized_phase_wave.py` | Децентрализованный фазовый волновой алгоритм для произвольного ориентированного графа. |
+| `server_finn.py` | API-демо децентрализованной балансировки: настройка топологии, запуск фаз и мониторинг. |
 | `config.py` | Порты и дерево узлов (TREE). |
 | `models.py` | Модель задачи (id, type, created_at). |
 | `worker.py` | Узел-воркер: очередь задач, /load, /tasks, /tasks/accept, /transfer, /echo_token. |
@@ -136,3 +138,20 @@ chmod +x balancer/create_visualization.sh
 | `echo_algorithm.py` | Реализация алгоритма "Эхо" для сбора нагрузок. |
 | `master.py` | Центр: алгоритм "Эхо", решение о перераспределении, /visualize, /register_request. |
 | `visualize_table.py` | Генерация HTML-таблицы с визуализацией дерева и нагрузок. |
+
+## Децентрализованный фазовый волновой алгоритм (произвольная ориентированная топология)
+
+Запуск API-демо:
+
+```bash
+python -m uvicorn balancer.server_finn:app --host 0.0.0.0 --port 8000
+```
+
+Основные эндпоинты:
+
+- `GET /status` — текущая топология и нагрузки.
+- `POST /topology` — задать произвольный ориентированный граф.
+- `POST /loads` — вручную задать стартовые нагрузки узлов.
+- `POST /generate_requests` — добавить случайные запросы (нагрузку).
+- `GET /balance` — один фазовый шаг (wave + transfer).
+- `POST /balance/run` — выполнять шаги до стабилизации.
