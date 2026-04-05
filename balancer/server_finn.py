@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Веб-сервер для лабораторной 7–10:
-- /status  — вернуть текущую нагрузку узлов сети;
-- /balance — выполнить шаг централизованной балансировки на основе волнового алгоритма Финна.
+- /status  — текущая нагрузка узлов;
+- /balance — шаг централизованной балансировки (волновой алгоритм Финна);
+- /generate_requests — смоделировать поступление задач.
 
-Используется страницей index.html (script.js) как бэкенд.
+Демо-роутер подключается к app.main (порт 8000); отдельный запуск — python -m balancer.server_finn.
 """
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -15,36 +16,25 @@ from pydantic import BaseModel
 
 from balancer.network import NetworkBalancer
 
-app = FastAPI(title="Finn Network Balancer")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+router = APIRouter(tags=["Finn demo"])
 balancer = NetworkBalancer()
 
 
-@app.get("/status")
+@router.get("/status")
 def get_status():
-    """Текущая нагрузка всех узлов сети (для блока 'До' или 'После' на сайте)."""
+    """Текущая нагрузка узлов (для таблиц «до / после» на index.html)."""
     return JSONResponse(balancer.get_network_status())
 
 
 class RequestsPayload(BaseModel):
-    """Тело запроса для генерации входящих запросов студентов."""
+    """Тело запроса: сколько задач добавить в симуляцию."""
 
     count: int = 10
 
 
-@app.post("/generate_requests")
+@router.post("/generate_requests")
 def generate_requests(body: RequestsPayload):
-    """
-    Смоделировать приход указанного количества запросов от студентов.
-
-    Используется на веб‑странице: кнопка «Отправить 10 запросов».
-    """
+    """Смоделировать поступление задач во входной узел (перекос перед балансировкой)."""
     balancer.add_requests(body.count)
     return JSONResponse(
         {
@@ -55,16 +45,28 @@ def generate_requests(body: RequestsPayload):
     )
 
 
-@app.get("/balance")
+@router.get("/balance")
 def balance():
-    """
-    Выполнить централизованную балансировку.
-    Внутри используется wave_algorithm_finn() для сбора нагрузок.
-    """
+    """Централизованная балансировка нагрузки по узлам."""
     before = balancer.get_network_status()
     balancer.centralized_balancing()
     after = balancer.get_network_status()
     return JSONResponse({"before": before, "after": after})
+
+
+def create_app() -> FastAPI:
+    application = FastAPI(title="Finn Network Balancer")
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    application.include_router(router)
+    return application
+
+
+app = create_app()
 
 
 def main():
@@ -75,4 +77,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

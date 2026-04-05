@@ -10,7 +10,7 @@
 """
 
 import random
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 class Node:
@@ -40,11 +40,11 @@ class NetworkBalancer:
     def __init__(self) -> None:
         # Узлы сети: центральный API и сервисы студенческого приложения
         self.nodes: Dict[str, Node] = {
-            "A": Node("Центральный API университета", "Шлюз /api"),
-            "B": Node("Сервис зачётной книжки", "Модуль /gradebook"),
-            "C": Node("Сервис расписания", "Модуль /schedule"),
-            "D": Node("Сервис новостей", "Модуль /news"),
-            "E": Node("Сервис справочной информации", "Модуль /directory"),
+            "A": Node("Шлюз API", "Входящий поток задач"),
+            "B": Node("Воркер B", "Очередь исполнения #1"),
+            "C": Node("Воркер C", "Очередь исполнения #2"),
+            "D": Node("Воркер D", "Очередь исполнения #3"),
+            "E": Node("Воркер E", "Холодное хранение"),
         }
         self._setup_network()
 
@@ -120,12 +120,16 @@ class NetworkBalancer:
                 if deficit_node.load < avg_load:
                     deficit_nodes.append(deficit_node)
 
-    def get_network_status(self) -> Dict[str, Dict[str, int]]:
+    def get_network_status(self) -> Dict[str, Dict[str, Any]]:
         """Текущая нагрузка узлов (для отображения на сайте)."""
         return {
-            key: {"address": node.address, "load": node.load}
+            key: {"name": node.name, "address": node.address, "load": node.load}
             for key, node in self.nodes.items()
         }
+
+
+# Имя для обратной совместимости с balancer/server_finn.py
+ZenNotesBalancer = NetworkBalancer
 
 
 if __name__ == "__main__":

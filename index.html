@@ -2,470 +2,190 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Балансировка нагрузки · Алгоритм Финна</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Сервис задач | Балансировка очереди</title>
   <script src="script.js" defer></script>
   <style>
     :root {
-      --bg: #0f172a;
-      --bg-card: #020617;
-      --bg-card-soft: #0b1220;
-      --accent: #38bdf8;
-      --accent-soft: rgba(56, 189, 248, 0.1);
-      --accent-strong: #06b6d4;
-      --text-main: #e5e7eb;
-      --text-muted: #9ca3af;
-      --border-subtle: rgba(148, 163, 184, 0.3);
-      --danger: #f97373;
-      --warn: #facc15;
-      --ok: #4ade80;
+      --bg-body: #f9fafb;
+      --surface: #ffffff;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #020617 100%);
+      background-color: var(--bg-body);
       color: var(--text-main);
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding: 32px 16px;
+      padding: 40px 20px;
     }
 
-    .page {
+    .app-container {
       width: 100%;
-      max-width: 1180px;
+      max-width: 1000px;
     }
 
-    .header {
+    .app-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .title-block h1 {
-      margin: 0 0 8px 0;
-      font-size: 26px;
-      letter-spacing: 0.03em;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .title-pill {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--accent-soft);
-      background: radial-gradient(circle at top left, var(--accent-soft), transparent 60%);
-      color: var(--accent);
-    }
-
-    .subtitle {
+    .logo-area h1 {
       margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .logo-area p {
+      margin: 4px 0 0 0;
       font-size: 14px;
       color: var(--text-muted);
-      max-width: 620px;
     }
 
-    .controls {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
+    .action-panel { display: flex; gap: 8px; }
 
-    .buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    button {
-      border-radius: 999px;
-      padding: 8px 16px;
-      border: 1px solid transparent;
+    .btn {
+      padding: 10px 18px;
+      border-radius: 8px;
       font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: transparent;
+      border: 1px solid var(--border);
+      background: var(--surface);
       color: var(--text-main);
-      transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      transition: all 0.2s ease;
     }
+
+    .btn:hover { background: #f3f4f6; }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-      border-color: rgba(56, 189, 248, 0.6);
-      box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
-      color: #0b1120;
-      font-weight: 500;
+      background: var(--primary);
+      color: white;
+      border: none;
     }
 
-    .btn-secondary {
-      border-color: var(--border-subtle);
-      background: rgba(15, 23, 42, 0.8);
-    }
+    .btn-primary:hover { background: var(--primary-hover); }
 
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.8);
-    }
-
-    .btn-primary:hover {
-      box-shadow: 0 0 22px rgba(56, 189, 248, 0.6);
-    }
-
-    .btn-secondary:hover {
-      border-color: rgba(148, 163, 184, 0.8);
-    }
-
-    .hint {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .layout {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      align-items: stretch;
-    }
-
-    @media (max-width: 900px) {
-      .header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .controls {
-        align-items: flex-start;
-      }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
     }
 
     .card {
-      border-radius: 18px;
-      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 60%),
-                  radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
-      padding: 18px 18px 20px 18px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      box-shadow: 0 22px 40px rgba(15, 23, 42, 0.9);
-      backdrop-filter: blur(14px);
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .card-title {
-      font-size: 15px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .card-caption {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .badge {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.55);
-      color: var(--text-muted);
-      background: rgba(15, 23, 42, 0.7);
-    }
-
-    .grid-two {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    @media (max-width: 800px) {
-      .grid-two {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .small-card {
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.97), #020617);
-      padding: 10px 10px 12px 10px;
-    }
-
-    .small-card h2 {
-      margin: 0 0 6px 0;
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .small-card p {
-      margin: 0 0 10px 0;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 2px;
-      font-size: 13px;
-    }
-
-    th, td {
-      padding: 6px 8px;
-      text-align: left;
-      border-bottom: 1px solid rgba(30, 41, 59, 0.9);
-    }
-
-    th {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6));
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-
-    tbody tr:nth-child(odd) {
-      background: rgba(15, 23, 42, 0.6);
-    }
-
-    tbody tr:nth-child(even) {
-      background: rgba(15, 23, 42, 0.3);
-    }
-
-    .pill-load {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    .pill-load.low {
-      border-color: rgba(74, 222, 128, 0.7);
-      color: var(--ok);
-      background: rgba(22, 163, 74, 0.12);
-    }
-
-    .pill-load.medium {
-      border-color: rgba(250, 204, 21, 0.7);
-      color: var(--warn);
-      background: rgba(253, 224, 71, 0.12);
-    }
-
-    .pill-load.high {
-      border-color: rgba(239, 68, 68, 0.7);
-      color: var(--danger);
-      background: rgba(248, 113, 113, 0.12);
-    }
-
-    .pill-node {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(148, 163, 184, 0.45);
-    }
-
-    .pill-node span {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-    }
-
-    .pill-node strong {
-      font-weight: 500;
-    }
-
-    .tree-card {
-      border-radius: 18px;
-      background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.07), transparent 60%),
-                  linear-gradient(145deg, rgba(15, 23, 42, 0.98), #020617);
-      padding: 18px 18px 14px 18px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      box-shadow: 0 22px 40px rgba(15, 23, 42, 0.9);
-      backdrop-filter: blur(14px);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .tree-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .tree-title {
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .tree-caption {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    #treeView {
-      margin: 4px 0 0 0;
-      padding: 10px 10px 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      background: #020617;
-      border: 1px dashed rgba(148, 163, 184, 0.5);
-      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 11px;
-      color: #e5e7eb;
-      white-space: pre-wrap;
-      max-height: 260px;
-      overflow: auto;
+      padding: 24px;
+      box-shadow: var(--shadow);
     }
 
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+    .card h2 {
+      margin: 0 0 20px 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .task-table { width: 100%; border-collapse: collapse; }
+
+    .task-table th {
+      text-align: left;
       font-size: 11px;
       color: var(--text-muted);
-      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+    .task-table td {
+      padding: 16px 8px;
+      border-bottom: 1px solid #f9fafb;
     }
 
-    .legend-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
-      background: var(--ok);
+    .team-info .name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .team-info .id { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+
+    .load-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
     }
 
-    .legend-dot.warn {
-      background: var(--warn);
+    .pill-low { background: #dcfce7; color: #166534; }
+    .pill-med { background: #fef9c3; color: #854d0e; }
+    .pill-high { background: #fee2e2; color: #991b1b; }
+
+    .progress-bar {
+      height: 6px;
+      background: #f3f4f6;
+      border-radius: 10px;
+      margin-top: 10px;
+      width: 120px;
+      overflow: hidden;
     }
 
-    .legend-dot.danger {
-      background: var(--danger);
-    }
+    .progress-fill { height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
-    .legend-dot.offline {
-      background: #6b7280;
-    }
+    @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <div class="page">
-    <header class="header">
-      <div class="title-block">
-        <div class="title-pill">Распределённая система · Алгоритм Финна</div>
-        <h1>
-          Централизованная балансировка нагрузки
-        </h1>
-        <p class="subtitle">
-          Волновой алгоритм Финна используется для сбора информации о загрузке узлов сети университета,
-          после чего выполняется централизованное выравнивание нагрузки.
-        </p>
-      </div>
-      <div class="controls">
-        <div class="buttons">
-          <button class="btn-primary" onclick="fetchStatus()">
-            Снять срез состояния
-          </button>
-          <button class="btn-secondary" onclick="sendTenRequests()">
-            Отправить 10 запросов
-          </button>
-          <button class="btn-secondary" onclick="balanceOnce()">
-            Выполнить шаг балансировки
-          </button>
-        </div>
-        <div class="hint">
-          1. Отправьте 10 запросов · 2. Снимите срез · 3. Выполните шаг балансировки
-        </div>
-      </div>
-    </header>
 
-    <main class="layout">
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Состояние сервисов студенческого приложения до и после балансировки</div>
-            <div class="card-caption">
-              Каждый узел — отдельный сервис (зачётка, расписание, новости и т.д.). Нагрузка моделирует количество запросов студентов,
-              которое затем выравнивается централизованным алгоритмом по данным волнового обхода Финна.
-            </div>
-          </div>
-          <div class="badge">Workers · Leaves</div>
-        </div>
+<div class="app-container">
+  <header class="app-header">
+    <div class="logo-area">
+      <h1>Сервис задач</h1>
+      <p>Распределение задач по воркерам · алгоритм Финна</p>
+    </div>
+    <div class="action-panel">
+      <button class="btn" onclick="sendTenRequests()">+ 10 задач</button>
+      <button class="btn" onclick="fetchStatus()">Обновить</button>
+      <button class="btn btn-primary" onclick="balanceOnce()">Сбалансировать</button>
+    </div>
+  </header>
 
-        <div class="grid-two">
-          <div class="small-card">
-            <h2>До балансировки</h2>
-            <p>Состояние студенческого приложения сразу после неравномерного потока запросов к сервисам.</p>
-            <table>
-              <thead>
-              <tr>
-                <th>Узел</th>
-                <th>Адрес</th>
-                <th>Нагрузка</th>
-              </tr>
-              </thead>
-              <tbody id="beforeBalance"></tbody>
-            </table>
-          </div>
+  <main class="dashboard-grid">
+    <section class="card">
+      <h2>Текущая очередь</h2>
+      <table class="task-table">
+        <thead>
+          <tr><th>Воркер</th><th>Адрес</th><th>Нагрузка</th></tr>
+        </thead>
+        <tbody id="beforeBalance"></tbody>
+      </table>
+    </section>
 
-          <div class="small-card">
-            <h2>После балансировки</h2>
-            <p>Состояние после шага централизованного перераспределения задач.</p>
-            <table>
-              <thead>
-              <tr>
-                <th>Узел</th>
-                <th>Адрес</th>
-                <th>Нагрузка</th>
-              </tr>
-              </thead>
-              <tbody id="afterBalance"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+    <section class="card">
+      <h2>После балансировки</h2>
+      <table class="task-table">
+        <thead>
+          <tr><th>Воркер</th><th>Адрес</th><th>Нагрузка</th></tr>
+        </thead>
+        <tbody id="afterBalance"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
 
-      <!-- Блоки с топологией и подробным выводом Финна убраны, чтобы сфокусироваться на балансировке по его данным -->
-    </main>
-  </div>
 </body>
 </html>
-

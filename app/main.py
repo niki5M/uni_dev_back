@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from app.api.v1 import gradebook, schedule, news
+from balancer.server_finn import router as finn_demo_router
 from app.database.connection import init_db, AsyncSessionLocal
 from app.database.init_data import init_gradebook_data, init_schedule_data, init_news_data
 
@@ -57,6 +58,7 @@ app.include_router(schedule.router, prefix="/api/v1/schedule", tags=["Schedule"]
 app.include_router(schedule.router, prefix="/api", tags=["Schedule"])
 app.include_router(news.router, prefix="/api/v1/news", tags=["News"])
 app.include_router(news.router, prefix="/api/news", tags=["News"])
+app.include_router(finn_demo_router)
 
 
 @app.get("/")

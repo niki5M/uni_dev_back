@@ -12,8 +12,9 @@ function renderLoadCell(load) {
   if (cls === "low") label = "низкая";
   else if (cls === "medium") label = "средняя";
   else if (cls === "high") label = "высокая";
+  const pill = cls === "medium" ? "med" : cls;
   return `
-    <div class="pill-load ${cls}">
+    <div class="load-pill pill-${pill}">
       <span>${load}</span>
       <span>${label}</span>
     </div>
@@ -36,7 +37,7 @@ function updateTable(data, tableId) {
   for (const [branch, info] of entries) {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${branch}</td>
+      <td>${info.name || branch}</td>
       <td>${info.address}</td>
       <td>${renderLoadCell(info.load)}</td>
     `;
