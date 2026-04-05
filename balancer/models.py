@@ -5,5 +5,5 @@ from pydantic import BaseModel
 
 
 class Task(BaseModel):
-    """Задача студента: тип запроса (зачётка, расписание, новости)."""
+    """Демо-задача к API заметок: gradebook, schedule или news."""
     type: str = "gradebook"  # gradebook | schedule | news

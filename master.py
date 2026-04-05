@@ -55,13 +55,13 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Master (Central Node)", lifespan=lifespan)
+app = FastAPI(title="Notes Service — Master (центральный узел)", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
 @app.get("/tree")
 def get_tree():
-    """Структура дерева и текущие нагрузки (для визуализации во Flutter)."""
+    """Структура дерева и текущие нагрузки (для клиента / монитора)."""
     return JSONResponse({
         "topology": TREE,
         "loads": load_map,
@@ -86,7 +86,7 @@ def get_least_loaded_worker():
 
 
 class RegisterRequest(BaseModel):
-    """Тело запроса: тип запроса студента (зачётка, расписание, новости)."""
+    """Тип демо-задачи: gradebook (карточки), schedule (план недели), news (лента)."""
     request_type: str = "gradebook"  # gradebook | schedule | news
 
 

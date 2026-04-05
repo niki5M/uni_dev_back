@@ -3,7 +3,7 @@ from app.database.connection import Base
 
 
 class GradeRecordDB(Base):
-    """Модель БД для записей зачетной книжки"""
+    """Модель БД для карточек заметок (метаданные в универсальных полях)"""
     __tablename__ = "grade_records"
 
     id = Column(String, primary_key=True, index=True)
@@ -20,7 +20,7 @@ class GradeRecordDB(Base):
 
 
 class ScheduleItemDB(Base):
-    """Модель БД для элементов расписания. day_of_week: 1=Пн .. 7=Вс"""
+    """Модель БД для слотов плана недели. day_of_week: 1=Пн .. 7=Вс"""
     __tablename__ = "schedule_items"
 
     id = Column(String, primary_key=True, index=True)
@@ -39,7 +39,7 @@ class ScheduleItemDB(Base):
 
 
 class NewsDB(Base):
-    """Модель БД для новостей. image_urls хранится как JSON-строка."""
+    """Модель БД для ленты. image_urls хранится как JSON-строка."""
     __tablename__ = "news"
 
     id = Column(String, primary_key=True, index=True)

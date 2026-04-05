@@ -8,19 +8,19 @@ class GradebookService:
         self.repository = repository
 
     async def get_all_grades(self) -> List[GradeRecord]:
-        """Получить все оценки"""
+        """Все карточки заметок"""
         return await self.repository.get_all_grades()
 
     async def get_grades_by_semester(self, semester: int) -> List[GradeRecord]:
-        """Получить оценки по семестру"""
+        """Карточки по номеру раздела"""
         return await self.repository.get_grades_by_semester(semester)
 
     async def get_grades_by_subject(self, subject: str) -> List[GradeRecord]:
-        """Получить оценки по предмету"""
+        """Карточки по заголовку (точное совпадение в репозитории)"""
         return await self.repository.get_grades_by_subject(subject)
 
     async def get_average_grade(self) -> float:
-        """Вычислить средний балл"""
+        """Средний приоритет (grade)"""
         grades = await self.repository.get_all_grades()
         if not grades:
             return 0.0
@@ -29,7 +29,7 @@ class GradebookService:
         return round(total / len(grades), 2)
 
     async def get_grade_statistics(self) -> Dict[str, int]:
-        """Получить статистику по оценкам"""
+        """Распределение по приоритетам"""
         grades = await self.repository.get_all_grades()
         statistics: Dict[str, int] = {}
         

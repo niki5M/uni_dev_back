@@ -1,6 +1,6 @@
 """
-Узел-исполнитель (Worker). Хранит очередь «задач» — имитация запросов к API университета.
-Умеет отдавать нагрузку и принимать/передавать задачи по команде центра.
+Узел-исполнитель (Worker). Очередь задач имитирует запросы к API сервиса заметок.
+Поддерживает сбор нагрузки и передачу задач по команде мастера.
 """
 import os
 import argparse
@@ -12,7 +12,7 @@ from typing import List
 from balancer.models import Task
 import httpx
 
-app = FastAPI(title="Worker Node")
+app = FastAPI(title="Notes Service — Worker")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # Очередь задач узла (в памяти)

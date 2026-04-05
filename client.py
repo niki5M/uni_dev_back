@@ -1,6 +1,6 @@
 """
-Клиент для студентов: один запрос на мастер.
-Мастер сам выбирает наименее загруженный узел и записывает туда запрос.
+Клиент демо-нагрузки: один запрос на мастер.
+Мастер выбирает наименее загруженный узел и ставит задачу в очередь.
 """
 import httpx
 
@@ -10,7 +10,7 @@ REGISTER_URL = f"{MASTER_URL}/register_request"
 
 
 def register_request(request_type: str = "gradebook"):
-    """Отправка запроса на обработку (зачётка, расписание, новости)."""
+    """Отправка задачи (gradebook → карточки, schedule → план, news → лента)."""
     response = httpx.post(REGISTER_URL, json={"request_type": request_type})
     if response.status_code == 200:
         data = response.json()
@@ -21,6 +21,6 @@ def register_request(request_type: str = "gradebook"):
 
 
 if __name__ == "__main__":
-    print("Тип запроса: gradebook, schedule, news")
-    request_type = input("Введите тип запроса (по умолчанию gradebook): ").strip() or "gradebook"
+    print("Тип задачи: gradebook (карточки), schedule (план), news (лента)")
+    request_type = input("Введите тип (по умолчанию gradebook): ").strip() or "gradebook"
     register_request(request_type)

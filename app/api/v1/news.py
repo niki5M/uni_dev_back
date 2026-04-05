@@ -20,7 +20,7 @@ async def get_news_list(
     offset: int = Query(0, ge=0, description="Смещение"),
     service: NewsService = Depends(get_news_service),
 ):
-    """Список новостей (по дате публикации, новые первые)."""
+    """Записи ленты (по дате публикации, новые первые)."""
     try:
         return await service.get_all_news(limit=limit, offset=offset)
     except Exception as e:
@@ -32,7 +32,7 @@ async def get_news_by_id(
     news_id: str,
     service: NewsService = Depends(get_news_service),
 ):
-    """Новость по id."""
+    """Элемент ленты по id."""
     news = await service.get_news_by_id(news_id)
     if not news:
         raise HTTPException(status_code=404, detail="News not found")

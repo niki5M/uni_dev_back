@@ -17,12 +17,12 @@ def get_gradebook_service(db: AsyncSession = Depends(get_db)) -> GradebookServic
 
 @router.get("/grades", response_model=List[GradeRecord])
 async def get_all_grades(
-    semester: Optional[int] = Query(None, description="Фильтр по семестру"),
-    subject: Optional[str] = Query(None, description="Фильтр по предмету"),
+    semester: Optional[int] = Query(None, description="Фильтр по номеру раздела (каталога)"),
+    subject: Optional[str] = Query(None, description="Фильтр по заголовку заметки"),
     service: GradebookService = Depends(get_gradebook_service)
 ):
     """
-    Получить все оценки с опциональной фильтрацией по семестру или предмету
+    Список карточек заметок с опциональной фильтрацией по разделу или заголовку.
     """
     try:
         if semester is not None:
@@ -40,7 +40,7 @@ async def get_average_grade(
     service: GradebookService = Depends(get_gradebook_service)
 ):
     """
-    Получить средний балл по всем оценкам
+    Среднее значение приоритета (поле grade) по всем карточкам.
     """
     try:
         average = await service.get_average_grade()
@@ -54,7 +54,7 @@ async def get_grade_statistics(
     service: GradebookService = Depends(get_gradebook_service)
 ):
     """
-    Получить статистику по оценкам (количество каждой оценки)
+    Распределение карточек по значению приоритета (grade).
     """
     try:
         statistics = await service.get_grade_statistics()

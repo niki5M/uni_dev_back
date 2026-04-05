@@ -26,8 +26,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="University Backend API",
-    description="Backend API for mobile university application",
+    title="Notes Service API",
+    description="Backend API для приложения заметок: карточки с приоритетом, план недели и лента материалов",
     version="1.0.0",
     lifespan=lifespan,
     default_response_class=JSONResponse
@@ -50,18 +50,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключение роутов
-app.include_router(gradebook.router, prefix="/api/v1/gradebook", tags=["Gradebook"])
-app.include_router(schedule.router, prefix="/api/v1/schedule", tags=["Schedule"])
-# Расписание также по /api/group-schedules (для приложения с SCHEDULE_API_URL=.../api)
-app.include_router(schedule.router, prefix="/api", tags=["Schedule"])
-app.include_router(news.router, prefix="/api/v1/news", tags=["News"])
-app.include_router(news.router, prefix="/api/news", tags=["News"])
+# Подключение роутов (префиксы и имена полей без изменений для совместимости клиентов)
+app.include_router(gradebook.router, prefix="/api/v1/gradebook", tags=["Заметки"])
+app.include_router(schedule.router, prefix="/api/v1/schedule", tags=["План недели"])
+# План также по /api/group-schedules (для приложения с SCHEDULE_API_URL=.../api)
+app.include_router(schedule.router, prefix="/api", tags=["План недели"])
+app.include_router(news.router, prefix="/api/v1/news", tags=["Лента"])
+app.include_router(news.router, prefix="/api/news", tags=["Лента"])
 
 
 @app.get("/")
 async def root():
-    return {"message": "University Backend API", "version": "1.0.0"}
+    return {"message": "Notes Service API", "version": "1.0.0"}
 
 
 @app.get("/health")

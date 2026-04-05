@@ -18,12 +18,12 @@ def get_schedule_service(db: AsyncSession = Depends(get_db)) -> ScheduleService:
 @router.get("/group-schedules", response_model=List[ScheduleItem])
 async def get_group_schedules(
     day: Optional[int] = Query(None, description="День недели 1=Пн .. 7=Вс"),
-    group: Optional[str] = Query(None, description="Идентификатор группы (например ИС-41)"),
+    group: Optional[str] = Query(None, description="Идентификатор пространства (например основной)"),
     service: ScheduleService = Depends(get_schedule_service),
 ):
     """
-    Расписание: вся неделя, по дню или по группе.
-    Без параметров — всё расписание (weekly).
+    Слоты плана недели: вся неделя, один день или фильтр по пространству (group_id).
+    Без параметров — полная неделя.
     """
     try:
         if day is not None:

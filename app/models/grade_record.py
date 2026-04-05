@@ -5,21 +5,21 @@ from datetime import date
 
 class GradeRecord(BaseModel):
     id: str
-    subject: str = Field(..., description="Название предмета")
-    teacher: str = Field(..., description="ФИО преподавателя")
-    exam_type: str = Field(..., description="Тип экзамена: Экзамен или Зачёт")
-    grade: int = Field(..., ge=2, le=5, description="Оценка от 2 до 5")
-    semester: int = Field(..., ge=1, le=12, description="Номер семестра")
+    subject: str = Field(..., description="Заголовок заметки")
+    teacher: str = Field(..., description="Автор или соавтор")
+    exam_type: str = Field(..., description="Статус записи, например «Черновик» или «Готово»")
+    grade: int = Field(..., ge=2, le=5, description="Приоритет важности от 2 до 5")
+    semester: int = Field(..., ge=1, le=12, description="Номер раздела / каталога")
     date: str = Field(..., description="Дата в формате YYYY-MM-DD")
-    academic_year: str = Field(..., description="Учебный год в формате YYYY-YYYY")
+    academic_year: str = Field(..., description="Период архива в формате YYYY-YYYY")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "id": "1",
-                "subject": "Проектный практикум",
-                "teacher": "Аметов Осман Мидатович",
-                "exam_type": "Экзамен",
+                "subject": "Рефакторинг API",
+                "teacher": "Команда бэкенда",
+                "exam_type": "Готово",
                 "grade": 5,
                 "semester": 1,
                 "date": "2024-01-15",
@@ -29,9 +29,9 @@ class GradeRecord(BaseModel):
 
 
 class AverageGradeResponse(BaseModel):
-    average: float = Field(..., description="Средний балл")
+    average: float = Field(..., description="Средний приоритет по карточкам")
 
 
 class GradeStatisticsResponse(BaseModel):
-    statistics: Dict[str, int] = Field(..., description="Статистика оценок")
+    statistics: Dict[str, int] = Field(..., description="Сколько карточек на каждом уровне приоритета")
 
